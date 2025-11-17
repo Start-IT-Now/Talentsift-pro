@@ -117,8 +117,7 @@ function App() {
     }
 
     // ✅ Save to localStorage for ResumeList
-    localStorage.setItem("resumeResults", JSON.stringify(result.data?.result || []));
-    localStorage.setItem("keySkills", JSON.stringify(formData.requiredSkills.split(",")));
+      localStorage.setItem("resumeResults", JSON.stringify(result.data));
 
     // ✅ Redirect to ResumeList
     navigate("/resumes");
