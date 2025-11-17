@@ -35,24 +35,13 @@ function App() {
       }
     };
 
-    const jobTypeLabel = decodeSafe(params.get('jobtype') || '').trim();
-    const jobTypeMap = {
-      'Full time': 'fulltime',
-      'Part time': 'parttime',
-      'Contract': 'contract',
-      'Freelance': 'freelance',
-      'Internship': 'internship',
-    };
-    const mappedJobType = jobTypeMap[jobTypeLabel] || '';
-
     setFormData(prev => ({
       ...prev,
       requiredSkills: decodeSafe(params.get('skills') || ''),
       jobDescription: decodeSafe(params.get('job') || ''),
       yearsOfExperience: decodeSafe(params.get('yoe') || ''),
-      jobTitle: decodeSafe(params.get('jobtitle') || ''),
-      jobType: mappedJobType,
-      source: decodeSafe(params.get('source') || ''),
+      jobTitle: decodeSafe(params.get('title') || ''),
+      jobtype: decodeSafe(params.get('jobtype') || ''),
     }));
   }, []);
 

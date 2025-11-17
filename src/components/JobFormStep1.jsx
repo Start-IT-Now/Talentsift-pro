@@ -188,26 +188,17 @@ const JobFormStep1 = ({ formData, handleInputChange, handleSubmit }) => {
 
             {/* Job Type + Skills */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+                <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-slate-800 font-semibold">
-                  <Users className="w-4 h-4" />
+                  <Briefcase className="w-4 h-4" />
                   Job Type <span className="text-red-500">*</span>
                 </Label>
-                <Select
+                <Input
+                  placeholder="e.g. Fulltime, Part-time, Contract"
                   value={formData.jobType}
-                  onValueChange={(value) => handleInputChange('jobType', value)}
-                >
-                  <SelectTrigger className="bg-white/70 border-gray-300">
-                    <SelectValue placeholder="Select Job Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fulltime">Full time</SelectItem>
-                    <SelectItem value="parttime">Part time</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="freelance">Freelance</SelectItem>
-                    <SelectItem value="internship">Internship</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => handleInputChange('jobType', e.target.value)}
+                  className="bg-white/70 border-gray-300"
+                />
                 {errors.jobType && <p className="text-red-600 text-sm">{errors.jobType}</p>}
               </div>
 
