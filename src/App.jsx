@@ -98,6 +98,12 @@ function App() {
     };
   };
 
+  const getSource = () => {
+  const params = new URLSearchParams(window.location.search);
+  return (params.get("source") || "").toLowerCase();
+};
+
+
   const handleNewSubmit = async (data) => {
     if (!data.jobTitle || !data.jobType || !data.jobDescription || !data.email) {
       toast({
@@ -149,7 +155,7 @@ function App() {
       if (credits < data.resumeFiles.length) {
         toast({
           title: "Insufficient Credits",
-          description: "You only have ${credits} credits left.",
+          description: 'You only have ${credits} credits left.',
           variant: "destructive",
         });
         return;
@@ -192,7 +198,7 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          result.message || "Upload failed with status ${response.status}"
+          result.message || 'Upload failed with status ${response.status}'
         );
       }
 
@@ -204,6 +210,56 @@ function App() {
       }
 
       localStorage.setItem("resumeResults", JSON.stringify(result.data));
+
+      // ✅ 4. Store results into ServiceNow (only if source=servicenow)
+const source = getSource();
+
+if (source === "servicenow") {
+  try {
+    const snPayload = {
+      case_id: result.data?.id || "",
+      job_title: data.jobTitle,
+      job_type: data.jobType,
+      years_of_experience: data.yearsOfExperience,
+      industry: data.industry,
+      email: data.email,
+      skills: data.requiredSkills,
+      job_description: stripHtml(data.jobDescription),
+
+      // ✅ full ai output
+      ai_results: result.data,
+    };
+
+    const snResponse = await fetch("/api/servicenow/storeResults", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(snPayload),
+    });
+
+    const snResult = await snResponse.json();
+
+    if (!snResponse.ok) {
+      throw new Error(snResult.message || "ServiceNow store failed");
+    }
+
+    console.log("✅ Stored in ServiceNow:", snResult);
+
+    toast({
+      title: "ServiceNow Updated",
+      description: `✅ Results stored in ServiceNow (${snResult.number || "OK"})`,
+    });
+  } catch (snErr) {
+    console.error("❌ ServiceNow storing failed:", snErr);
+
+    toast({
+      title: "ServiceNow Error",
+      description: snErr.message || "❌ Failed to store results in ServiceNow",
+      variant: "destructive",
+    });
+  }
+}
+
+
 
       try {
       await fetch("/api/logToGoogleSheet", {

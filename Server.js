@@ -2,10 +2,24 @@ import express from "express";
 import nodemailer from "nodemailer";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
+import servicenowRoutes from "./routes/servicenow.js";
 
 dotenv.config();
+
 const app = express();
 app.use(bodyParser.json());
+
+app.use(express.json({ limit: "15mb" })); // ✅ to allow big AI JSON
+
+app.use("/api/servicenow", servicenowRoutes);
+
+app.get("/", (req, res) => {
+  res.send("Backend Running ✅");
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
 
 app.post("/api/sendEmail", async (req, res) => {
   const { to, subject, results } = req.body;
