@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Range } from 'react-range';
 import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 
 const getRankLabel = (score) => {
   return '';
@@ -25,6 +27,8 @@ const ResumeList = () => {
   const [searched, setSearched] = useState(false);
   const location = useLocation();
 const [displayKeySkills, setDisplayKeySkills] = useState([]);
+const navigate = useNavigate();
+
 
 
   // Load from localStorage after a search
@@ -457,7 +461,7 @@ const fetchResumesByExecutionId = useCallback(async () => {
             </button>
           </div>
           </div>
-          
+
           <div className="flex justify-between items-center mb-4">
                         <p className="text-orange-500 font-medium">
               Showing {filteredResumes.length} result{filteredResumes.length !== 1 ? 's' : ''}
