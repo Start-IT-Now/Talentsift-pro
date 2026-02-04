@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import JobFormStep1 from "@/components/JobFormStep1";
 import ResumeList from "@/components/existing";
 import logo from "./logo.png";
+import axios from "axios";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -21,12 +22,17 @@ function App() {
     resumeFiles: [],
   });
 
-  const [orgId, setOrgId] = useState(null); 
+  const [orgId, setOrgId] = useState(null);
   const [submittedExisting, setSubmittedExisting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Auto-populate jobDescription and requiredSkills from URL params
+  // ✅ helper: get source from URL
+  const getSource = () => {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get("source") || "").toLowerCase();
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
@@ -62,7 +68,6 @@ function App() {
     }));
   }, []);
 
-  // Helper to strip HTML tags
   const stripHtml = (html) => {
     const div = document.createElement("div");
     div.innerHTML = html;
@@ -76,7 +81,6 @@ function App() {
     return div.textContent || div.innerText || "";
   };
 
-  // Restore orgId
   useEffect(() => {
     const storedId = localStorage.getItem("caseId");
     if (storedId) setOrgId(storedId);
@@ -89,21 +93,15 @@ function App() {
     }));
   };
 
-  // ✅ Credits Handling
   const getDomainKey = (email) => {
     const rawDomain = email.split("@")[1]?.toLowerCase().trim();
     return {
       rawDomain,
-      key: `${rawDomain.replace(/\./g, "_")}_credits`, // e.g. startitnow.com → startitnow_com_credits
+      key: `${rawDomain.replace(/\./g, "_")}_credits`,
     };
   };
 
-  const getSource = () => {
-  const params = new URLSearchParams(window.location.search);
-  return (params.get("source") || "").toLowerCase();
-};
-
-
+  // ✅ MAIN SUBMIT
   const handleNewSubmit = async (data) => {
     if (!data.jobTitle || !data.jobType || !data.jobDescription || !data.email) {
       toast({
@@ -131,9 +129,12 @@ function App() {
         body: JSON.stringify({ email: data.email }),
       });
 
-      const validateData = await validateRes.json();
+      let validateData = {};
+      try {
+        validateData = await validateRes.json();
+      } catch {}
 
-      if (validateRes.status !== 200 || validateData.status !== "success") {
+      if (!validateRes.ok || validateData.status !== "success") {
         toast({
           title: "Unauthorized",
           description: validateData.message || "Unauthorized company domain",
@@ -142,30 +143,29 @@ function App() {
         return;
       }
 
-      // --- 2. Handle credits per domain ---
+      // --- 2. Credits ---
       const { rawDomain, key } = getDomainKey(data.email);
 
       let credits = parseInt(localStorage.getItem(key), 10);
 
       if (isNaN(credits)) {
-        credits = rawDomain === "startitnow.co.in" ? 500 : 100; // ✅ domain rule
+        credits = rawDomain === "startitnow.co.in" ? 500 : 100;
         localStorage.setItem(key, credits);
       }
 
       if (credits < data.resumeFiles.length) {
         toast({
           title: "Insufficient Credits",
-          description: 'You only have ${credits} credits left.',
+          description: `You only have ${credits} credits left.`,
           variant: "destructive",
         });
         return;
       }
 
-      // Deduct credits
       const updatedCredits = credits - data.resumeFiles.length;
       localStorage.setItem(key, updatedCredits);
 
-      // --- 3. Submit job payload ---
+      // --- 3. Agentic AI Upload ---
       const form = new FormData();
 
       const jobPayload = {
@@ -176,14 +176,10 @@ function App() {
         job_description: stripHtml(data.jobDescription),
       };
 
-      console.log("Sending payload:", jobPayload);
-
       form.append("data", JSON.stringify(jobPayload));
 
       data.resumeFiles.forEach((file) => {
-        if (file instanceof File) {
-          form.append("resumes", file);
-        }
+        if (file instanceof File) form.append("resumes", file);
       });
 
       const response = await fetch(
@@ -198,12 +194,11 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          result.message || 'Upload failed with status ${response.status}'
+          result.message || `Upload failed with status ${response.status}`
         );
       }
 
-      console.log("✅ Response data:", result.data);
-
+      // ✅ store results locally
       if (result.data?.id) {
         setOrgId(result.data.id);
         localStorage.setItem("caseId", result.data.id);
@@ -211,78 +206,70 @@ function App() {
 
       localStorage.setItem("resumeResults", JSON.stringify(result.data));
 
-      // ✅ 4. Store results into ServiceNow (only if source=servicenow)
-const source = getSource();
+      // ✅ 4. If source=servicenow → store in ServiceNow directly
+      const source = getSource();
 
-if (source === "servicenow") {
-  try {
-    const snPayload = {
-      case_id: result.data?.id || "",
-      job_title: data.jobTitle,
-      job_type: data.jobType,
-      years_of_experience: data.yearsOfExperience,
-      industry: data.industry,
-      email: data.email,
-      skills: data.requiredSkills,
-      job_description: stripHtml(data.jobDescription),
+      if (source === "servicenow") {
+        try {
+          const snPayload = {
+            case_id: result.data?.id || "",
+            job_title: data.jobTitle,
+            job_type: data.jobType,
+            years_of_experience: data.yearsOfExperience,
+            industry: data.industry,
+            email: data.email,
+            skills: data.requiredSkills,
+            job_description: stripHtml(data.jobDescription),
 
-      // ✅ full ai output
-      ai_results: result.data,
-    };
+            // ✅ Full AI JSON
+            ai_results: result.data,
+          };
 
-    const snResponse = await fetch("/api/servicenow/storeResults", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(snPayload),
-    });
+          // ✅ Your Scripted REST API endpoint in ServiceNow
+          const snRes = await axios.post(
+            "https://dev303448.service-now.com/api/1852827/screening_results/POST",
+            snPayload,
+            {
+              auth: {
+                username: "admin",
+                password: "n/$zULuUC37l",
+              },
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+            }
+          );
 
-    const snResult = await snResponse.json();
+          console.log("✅ Stored in ServiceNow:", snRes.data);
 
-    if (!snResponse.ok) {
-      throw new Error(snResult.message || "ServiceNow store failed");
-    }
+          toast({
+            title: "ServiceNow Updated",
+            description: "✅ Results stored in ServiceNow successfully.",
+          });
+        } catch (snErr) {
+          console.error("❌ ServiceNow storing failed:", snErr);
 
-    console.log("✅ Stored in ServiceNow:", snResult);
-
-    toast({
-      title: "ServiceNow Updated",
-      description: `✅ Results stored in ServiceNow (${snResult.number || "OK"})`,
-    });
-  } catch (snErr) {
-    console.error("❌ ServiceNow storing failed:", snErr);
-
-    toast({
-      title: "ServiceNow Error",
-      description: snErr.message || "❌ Failed to store results in ServiceNow",
-      variant: "destructive",
-    });
-  }
-}
-
-
-
-      try {
-      await fetch("/api/logToGoogleSheet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: data.email,
-          resumeCount: data.resumeFiles.length,
-          caseId: result.data?.id || "N/A",
-        }),
-      });
-    } catch (sheetError) {
-      console.warn("⚠️ Failed to log to Google Sheets:", sheetError);
-    }
+          toast({
+            title: "ServiceNow Error",
+            description:
+              snErr.response?.data?.error?.message ||
+              snErr.message ||
+              "❌ Failed storing results in ServiceNow",
+            variant: "destructive",
+          });
+        }
+      }
 
       toast({
         title: "Success!",
-        description: "✅ Resumes processed successfully. Remaining credits: ${updatedCredits}",
+        description: `✅ Resumes processed successfully. Remaining credits: ${updatedCredits}`,
       });
 
       navigate("/resumes");
     } catch (error) {
       console.error("❌ Upload failed:", error);
+
       toast({
         title: "Upload Failed",
         description: error.message || "❌ Something went wrong.",
@@ -299,38 +286,18 @@ if (source === "servicenow") {
     <div className="min-h-screen bg-gray-100 relative overflow-hidden">
       <Helmet>
         <title>Talent Sift - Resume Screening Platform</title>
-        <meta
-          name="description"
-          content="Create and post job opportunities with Talent Sift's intuitive job posting platform"
-        />
       </Helmet>
 
-      {/* Background floating blobs */}
       <motion.div
         className="absolute inset-0 opacity-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.1 }}
         transition={{ duration: 1 }}
-      >
-        <div className="absolute top-20 left-20 w-32 h-32 bg-white rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-48 h-48 bg-white rounded-full blur-xl animate-pulse delay-500"></div>
-        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white rounded-full blur-lg animate-pulse delay-1000"></div>
-      </motion.div>
+      />
 
       <div className="relative z-10 min-h-screen flex flex-col ">
         <div className="p-8 flex items-center justify-start space-x-4">
           <img src={logo} alt="Talent Sift Logo" className="h-10" />
-          <div className="absolute top-0 right-0 p-4 flex items-center justify-end space-x-2">
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-blue font-bold">T</span>
-            </div>
-            <span className="text-2xl font-serif font-bold text-gray-800">
-              Talent Sift
-            </span>
-          </div>
-          <div className="absolute top-6 right-0 p-4 flex items-center justify-end space-x-2">
-            <span className="text-s font-serif text-gray-500">Pro Version</span>
-          </div>
         </div>
 
         <div className="flex-1 flex items-center justify-center p-4">
