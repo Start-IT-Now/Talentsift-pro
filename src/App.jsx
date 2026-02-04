@@ -132,32 +132,46 @@ function App() {
     const resumeResults = result.data?.result;
     
       // Branch by source
-      if (source === "servicenow") {
-        console.log("source:", source);
-        console.log("Saving results to ServiceNow table...");
+   if (source === "servicenow") {
+  console.log("source:", source);
+  console.log("Saving results to ServiceNow table...");
 
-        const servicenowResponse = await axios.post(
-          'https://dev303448.service-now.com/api/1852827/screening_results/POST',
-          resumeResults,
-          {
-            auth: {
-              username: 'Integration User',
-              password: 'Password@123', // ⚠️ avoid hardcoding in production
-            },
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
-          }
-        );
+  const payload = {
+    case_id: result.data?.id || "",
+    job_title: formData.jobTitle,
+    job_type: formData.jobType,
+    years_of_experience: formData.yearsOfExperience,
+    location: formData.location,
+    skills: formData.requiredSkills,
+    job_description: stripHtml(formData.jobDescription),
 
-        console.log("✅ ServiceNow Response:", servicenowResponse.data);
+    // ✅ Full AI response stored
+    ai_results: result.data, 
+  };
 
-        toast({
-          title: "Success!",
-          description: "✅ Resume submitted successfully to Agentic AI & ServiceNow.",
-        });
-      }
+  const servicenowResponse = await axios.post(
+    "https://dev303448.service-now.com/api/1852827/screening_results/POST",
+    payload,
+    {
+      auth: {
+        username: "Integration User",
+        password: "Password@123",
+      },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    }
+  );
+
+  console.log("✅ ServiceNow Response:", servicenowResponse.data);
+
+  toast({
+    title: "Success!",
+    description: "✅ Agentic AI results stored in ServiceNow successfully.",
+  });
+}
+
 
       else if (source === "qntrl") {
         console.log("source:", source);
