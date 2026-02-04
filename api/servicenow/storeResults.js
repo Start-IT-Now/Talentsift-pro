@@ -23,7 +23,7 @@ router.post("/storeResults", async (req, res) => {
     const instanceUrl = process.env.SN_INSTANCE_URL;
     const username = process.env.SN_USERNAME;
     const password = process.env.SN_PASSWORD;
-    const table = process.env.SN_TABLE || "u_talent_sift_case";
+    const table = process.env.SN_TABLE || "u_resume_ranking";
 
     if (!instanceUrl || !username || !password) {
       return res.status(500).json({
