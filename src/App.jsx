@@ -15,7 +15,7 @@ function App() {
     location: '',
     requiredSkills: '',
     jobDescription: '',
-    resumeFiles: null,
+    resumeFiles: [],
     source: '',
   });
 
@@ -85,14 +85,15 @@ function App() {
       return;
     }
 
-    if (!formData.resumeFiles) {
-      toast({
-        title: "Missing Resume",
-        description: "Please upload a resume before submitting.",
-        variant: "destructive"
-      });
-      return;
-    }
+if (!formData.resumeFiles || formData.resumeFiles.length === 0) {
+  toast({
+    title: "Missing Resume",
+    description: "Please upload a resume before submitting.",
+    variant: "destructive"
+  });
+  return;
+}
+
 
     try {
       const form = new FormData();
