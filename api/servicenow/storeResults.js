@@ -1,8 +1,9 @@
-import express from "express";
-const router = express.Router();
+export default async function handler(req, res) {
+  // Only POST allowed
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method Not Allowed" });
+  }
 
-// POST /api/servicenow/storeResults
-router.post("/storeResults", async (req, res) => {
   try {
     const {
       case_id,
@@ -14,12 +15,13 @@ router.post("/storeResults", async (req, res) => {
       skills,
       job_description,
       ai_results,
-    } = req.body;
+    } = req.body || {};
 
     if (!case_id) {
       return res.status(400).json({ message: "case_id is required" });
     }
 
+    // ✅ read from env (Vercel env vars)
     const instanceUrl = process.env.SN_INSTANCE_URL;
     const username = process.env.SN_USERNAME;
     const password = process.env.SN_PASSWORD;
@@ -27,14 +29,28 @@ router.post("/storeResults", async (req, res) => {
 
     if (!instanceUrl || !username || !password) {
       return res.status(500).json({
-        message: "ServiceNow credentials missing in .env",
+        message:
+          "Missing ServiceNow env vars (SN_INSTANCE_URL, SN_USERNAME, SN_PASSWORD, SN_TABLE). Add them in Vercel dashboard.",
       });
     }
 
     const auth =
       "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
 
-    // ✅ 1) Check if record already exists using case_id
+    // ✅ Map to ServiceNow table fields
+    const recordBody = {
+      u_case_id: case_id,
+      u_job_title: job_title || "",
+      u_job_type: job_type || "",
+      u_years_of_experience: years_of_experience || "",
+      u_industry: industry || "",
+      u_email: email || "",
+      u_required_skills: skills || "",
+      u_job_description: job_description || "",
+      u_ai_results: JSON.stringify(ai_results || {}),
+    };
+
+    // ✅ 1) Lookup existing record by u_case_id
     const checkUrl = `${instanceUrl}/api/now/table/${table}?sysparm_query=u_case_id=${case_id}&sysparm_limit=1`;
 
     const checkRes = await fetch(checkUrl, {
@@ -45,38 +61,19 @@ router.post("/storeResults", async (req, res) => {
       },
     });
 
-    const checkData = await checkRes.json();
+    const checkJson = await checkRes.json();
 
     if (!checkRes.ok) {
-      return res.status(checkRes.status).json({
-        message: checkData?.error?.message || "ServiceNow lookup failed",
-        details: checkData,
+      return res.status(400).json({
+        message: checkJson?.error?.message || "ServiceNow lookup failed",
+        details: checkJson,
       });
     }
 
-    // ✅ 2) Build record body (map your payload → ServiceNow fields)
-    const recordBody = {
-      u_case_id: case_id,
-      u_job_title: job_title || "",
-      u_job_type: job_type || "",
-      u_years_of_experience: years_of_experience || "",
-      u_industry: industry || "",
-      u_email: email || "",
-      u_required_skills: skills || "",
-      u_job_description: job_description || "",
-
-      // ✅ Save full JSON as string
-      u_ai_results: JSON.stringify(ai_results || {}),
-    };
-
+    // ✅ 2) Create or Update
     let snRes;
-    let snData;
-    let action = "";
-
-    // ✅ 3) If exists update else create
-    if (checkData?.result?.length > 0) {
-      action = "updated";
-      const sysId = checkData.result[0].sys_id;
+    if (checkJson?.result?.length > 0) {
+      const sysId = checkJson.result[0].sys_id;
 
       snRes = await fetch(`${instanceUrl}/api/now/table/${table}/${sysId}`, {
         method: "PUT",
@@ -88,7 +85,6 @@ router.post("/storeResults", async (req, res) => {
         body: JSON.stringify(recordBody),
       });
     } else {
-      action = "created";
       snRes = await fetch(`${instanceUrl}/api/now/table/${table}`, {
         method: "POST",
         headers: {
@@ -100,26 +96,22 @@ router.post("/storeResults", async (req, res) => {
       });
     }
 
-    snData = await snRes.json();
+    const snJson = await snRes.json();
 
     if (!snRes.ok) {
-      return res.status(snRes.status).json({
-        message: snData?.error?.message || "ServiceNow create/update failed",
-        details: snData,
+      return res.status(400).json({
+        message: snJson?.error?.message || "ServiceNow create/update failed",
+        details: snJson,
       });
     }
 
-    return res.json({
+    return res.status(200).json({
       status: "success",
-      action,
-      sys_id: snData.result.sys_id,
-      number: snData.result.number,
-      result: snData.result,
+      sys_id: snJson.result.sys_id,
+      number: snJson.result.number,
     });
   } catch (err) {
-    console.error("❌ ServiceNow storeResults error:", err);
+    console.error("ServiceNow storeResults error:", err);
     return res.status(500).json({ message: err.message });
   }
-});
-
-export default router;
+}
