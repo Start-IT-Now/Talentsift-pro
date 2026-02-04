@@ -30,15 +30,12 @@
 
 body {
   font-family: 'DM Sans', sans-serif;
-  background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #2563eb 100%);
   min-height: 100vh;
+  background: linear-gradient(135deg, #eeac6f 0%, #f9d18d 50%, #f7cc8a 100%);
+  color: hsl(var(--foreground));
 }
 
 * {
   border-color: hsl(var(--border));
 }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-}

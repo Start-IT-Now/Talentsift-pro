@@ -216,7 +216,7 @@ function App() {
 
   return (
     <HelmetProvider>
-      <div className="min-h-screen bg-gradient-to-br from-cyan-350 via-blue-500 to-blue-600 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-cyan-300 via-blue-500 to-blue-600 relative overflow-hidden">
         <Helmet>
           <title>Talent Sift - Job Posting Platform</title>
           <meta
