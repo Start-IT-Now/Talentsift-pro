@@ -55,19 +55,25 @@ const JobFormStep1 = ({ formData, handleInputChange, handleSubmit }) => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.jobTitle) newErrors.jobTitle = 'Job Title is required';
-    if (!formData.jobType) newErrors.jobType = 'Job Type is required';
-    if (!formData.requiredSkills) newErrors.requiredSkills = 'Key skills are required';
-    if (!formData.jobDescription || formData.jobDescription.trim().length === 0) {
-      newErrors.jobDescription = 'Job description is required';
-    if (!formData.resumeFiles || formData.resumeFiles.length === 0) newErrors.resumeFiles = 'At least one resume must be uploaded';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+ const validate = () => {
+  const newErrors = {};
+
+  if (!formData.jobTitle) newErrors.jobTitle = "Job Title is required";
+  if (!formData.jobType) newErrors.jobType = "Job Type is required";
+  if (!formData.requiredSkills) newErrors.requiredSkills = "Key skills are required";
+
+  if (!formData.jobDescription || formData.jobDescription.trim().length === 0) {
+    newErrors.jobDescription = "Job description is required";
+  }
+
+  // ✅ Resume validation separate
+  if (!formData.resumeFiles || formData.resumeFiles.length === 0) {
+    newErrors.resumeFiles = "At least one resume must be uploaded";
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   const onSubmit = async () => {
     if (!validate()) return;
