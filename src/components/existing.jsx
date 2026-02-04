@@ -1,33 +1,32 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Range } from 'react-range';
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import { Range } from "react-range";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const getRankLabel = (score) => {
-  return '';
+  return "";
 };
 
 const ResumeList = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [uploadedResumes, setUploadedResumes] = useState([]);
   const [searchedResumes, setSearchedResumes] = useState([]);
-  const [orgId] = useState('2');
-  const [executionId, setExecutionId] = useState('');
-  const [exeName, setexeName] = useState('');
-  const [skillInput, setSkillInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [keySkillQuery, setKeySkillQuery] = useState('');
+  const [orgId] = useState("2");
+  const [executionId, setExecutionId] = useState("");
+  const [exeName, setexeName] = useState("");
+  const [skillInput, setSkillInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [keySkillQuery, setKeySkillQuery] = useState("");
   const [scoreRange, setScoreRange] = useState([1, 10]);
-  const [experienceRange, setExperienceRange] = useState([0, 35]); // Adjusted max to 50
+  const [experienceRange, setExperienceRange] = useState([0, 35]);
   const [filterEmail, setFilterEmail] = useState(false);
   const [filterPhone, setFilterPhone] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
-  const location = useLocation();
-const [displayKeySkills, setDisplayKeySkills] = useState([]);
-const navigate = useNavigate();
+  const [displayKeySkills, setDisplayKeySkills] = useState([]);
 
 
 
