@@ -283,21 +283,41 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 relative overflow-hidden">
+     <div className="min-h-screen bg-gray-100 relative overflow-hidden">
       <Helmet>
         <title>Talent Sift - Resume Screening Platform</title>
+        <meta
+          name="description"
+          content="Create and post job opportunities with Talent Sift's intuitive job posting platform"
+        />
       </Helmet>
-
+      
+      {/* Background floating blobs */}
       <motion.div
         className="absolute inset-0 opacity-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.1 }}
         transition={{ duration: 1 }}
-      />
+      >
+        <div className="absolute top-20 left-20 w-32 h-32 bg-white rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-48 h-48 bg-white rounded-full blur-xl animate-pulse delay-500"></div>
+        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white rounded-full blur-lg animate-pulse delay-1000"></div>
+      </motion.div>
 
       <div className="relative z-10 min-h-screen flex flex-col ">
         <div className="p-8 flex items-center justify-start space-x-4">
           <img src={logo} alt="Talent Sift Logo" className="h-10" />
+            <div className="absolute top-0 right-0 p-4 flex items-center justify-end space-x-2">
+            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-blue font-bold">T</span>
+            </div>
+            <span className="text-2xl font-serif font-bold text-gray-800">
+              Talent Sift
+            </span>
+          </div>
+          <div className="absolute top-6 right-0 p-4 flex items-center justify-end space-x-2">
+            <span className="text-s font-serif text-gray-500">Pro Version</span>
+          </div>
         </div>
 
         <div className="flex-1 flex items-center justify-center p-4">
