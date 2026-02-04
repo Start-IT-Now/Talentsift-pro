@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, BrowserRouter } from 'react-rou
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import ResumeList from './components/ResumeList';
+import ResumeList from './components/resumelist';
 import JobFormStep1 from './components/JobFormStep1';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
