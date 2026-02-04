@@ -86,6 +86,13 @@ function App() {
     if (storedId) setOrgId(storedId);
   }, []);
 
+  useEffect(() => {
+  if (window.location.pathname === "/") {
+    setSubmittedExisting(false);
+  }
+}, []);
+
+
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -291,7 +298,7 @@ function App() {
           content="Create and post job opportunities with Talent Sift's intuitive job posting platform"
         />
       </Helmet>
-      
+
       {/* Background floating blobs */}
       <motion.div
         className="absolute inset-0 opacity-10"
